@@ -15,6 +15,13 @@ from adafruit_ads1x15.analog_in import AnalogIn
 
 CONFIG_FILE = os.path.expanduser("~/.wheel_hid/config.json")
 HID_DEVICE = "/dev/hidg0"
+VENV_PY = os.path.join(CONFIG_DIR, "joystickenv", "bin", "python3")
+
+# -------------------------------------------------
+# Auto-switch to venv if present
+# -------------------------------------------------
+if os.path.exists(VENV_PY) and sys.executable != VENV_PY:
+    os.execv(VENV_PY, [VENV_PY] + sys.argv)
 
 # ---------------- DEFAULTS ----------------
 
