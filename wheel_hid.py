@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import time
 import json
 import struct
+import argparse
 import board
 import busio
 import adafruit_ads1x15.ads1115 as ADS
@@ -33,19 +35,19 @@ def ask_yn(prompt):
         if a in ("", "n", "no"):
             return False
 
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    return None
+def load_config_file():
+    if not os.path.exists(CONFIG_FILE):
+        return None
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
 
 def get_manual_config():
-    cfg = {}
-    cfg["address"] = int(input("Enter Address (hex, e.g. 0x48): "), 16)
-    cfg["max"] = int(input("Enter Max: "))
-    cfg["min"] = int(input("Enter Min: "))
-    cfg["center"] = int(input("Enter Center: "))
-    return cfg
+    return {
+        "address": int(input("Enter Address (hex, e.g. 0x48): "), 16),
+        "max": int(input("Enter Max: ")),
+        "min": int(input("Enter Min: ")),
+        "center": int(input("Enter Center: "))
+    }
 
 def get_defaults():
     return {
@@ -55,40 +57,71 @@ def get_defaults():
         "center": DEFAULT_CENTER,
     }
 
-def map_range(x, in_min, in_max, out_min, out_max):
-    return int((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
-
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
+def map_range(x, in_min, in_max, out_min, out_max):
+    return int((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)
+
+def load_from_config(cfg):
+    try:
+        return {
+            "address": int(cfg["address"], 16),
+            "min": int(cfg["calibration"]["min"]),
+            "max": int(cfg["calibration"]["max"]),
+            "center": int(cfg["calibration"]["center"]),
+        }
+    except Exception:
+        return None
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--auto", action="store_true",
+                        help="Automatically load saved config and start")
+    args = parser.parse_args()
+
     # ---------- CONFIG SELECTION ----------
     cfg = None
 
-    if ask_yn("Load config?"):
-        cfg = load_config()
-        if cfg is None:
-            print("No config found, using defaults.")
-            cfg = get_defaults()
-        else:
-            print("Loading config...")
-            cfg = {
-                "address": int(cfg["address"], 16),
-                **cfg["calibration"]
-            }
+    if args.auto:
+        cfg_file = load_config_file()
+        if not cfg_file:
+            print("ERROR: --auto specified but no config found.")
+            sys.exit(1)
+
+        cfg = load_from_config(cfg_file)
+        if not cfg:
+            print("ERROR: Invalid config file.")
+            sys.exit(1)
+
+        print("Auto mode: loading config...")
+
     else:
-        if ask_yn("OK use default values?"):
-            print("Ok using default values")
-            cfg = get_defaults()
+        if ask_yn("Load config?"):
+            cfg_file = load_config_file()
+            if cfg_file:
+                print("Loading config...")
+                cfg = load_from_config(cfg_file)
+                if not cfg:
+                    print("Config invalid, using defaults.")
+                    cfg = get_defaults()
+            else:
+                print("No config found.")
+                cfg = get_defaults()
+
         else:
-            cfg = get_manual_config()
+            if ask_yn("OK use default values?"):
+                print("Ok using default values")
+                cfg = get_defaults()
+            else:
+                cfg = get_manual_config()
 
     address = cfg["address"]
     adc_min = cfg["min"]
     adc_max = cfg["max"]
     adc_center = cfg["center"]
 
-    print(f"\nUsing:")
+    print("\nUsing:")
     print(f" Address : {hex(address)}")
     print(f" Min     : {adc_min}")
     print(f" Max     : {adc_max}")
@@ -107,13 +140,11 @@ def main():
         while True:
             raw = clamp(chan.value, adc_min, adc_max)
 
-            # Map with center preserved
             if raw >= adc_center:
                 mapped = map_range(raw, adc_center, adc_max, 0, 32767)
             else:
                 mapped = map_range(raw, adc_min, adc_center, -32767, 0)
 
-            # Smooth
             out = last * SMOOTHING + mapped * (1.0 - SMOOTHING)
             last = out
 
