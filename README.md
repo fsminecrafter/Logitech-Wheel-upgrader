@@ -2,6 +2,8 @@
 This is the software for the upgrade of the Logitech gaming wheel formula with vibrations. 
 This software is made for Armbian (:
 
+![Logitech formula wheel with vibration feedback](/assets/wheel.jpg)
+
 ---
 
 This project upgrades an analog steering wheel (potentiometer-based) by using a **Le Potato** SBC as a **USB HID gaming wheel**, providing **high-resolution input** via an **ADS1115 16-bit ADC**.
