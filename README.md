@@ -2,6 +2,8 @@
 This is the software for the upgrade of the Logitech gaming wheel formula with vibrations. 
 This software is made for Armbian (:
 
+#### ⚠️ This software is ONLY supported on Armbian with the Le potato (AML-S905X-CC), testing with other devices are probably not natively working.
+
 ![Logitech formula wheel with vibration feedback](logitechwheel.jpg)
 
 ---
