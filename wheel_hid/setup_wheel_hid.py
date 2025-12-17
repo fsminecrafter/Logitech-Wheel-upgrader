@@ -29,7 +29,7 @@ Before continuing, make sure:
    - Reboot after enabling
 
 2) USB HID gadget is set up
-   - dwc2 + libcomposite enabled
+   - libcomposite enabled
    - /dev/hidg0 exists
    - The Le Potato is connected via USB OTG to your PC
 
