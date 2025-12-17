@@ -68,7 +68,7 @@ def install_dependencies():
     subprocess.run(["sudo", "apt", "update"], check=False)
     subprocess.run(
         ["sudo", "apt", "install", "-y",
-         "python3-pip", "python3-smbus", "i2c-tools", "python3-venv"],
+         "python3-pip", "python3-smbus", "i2c-tools", "python3-venv", "gpiod", "libgpiod-dev"],
         check=False
     )
 
