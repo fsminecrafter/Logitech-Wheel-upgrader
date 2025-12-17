@@ -86,6 +86,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--auto", action="store_true",
                         help="Automatically load saved config and start")
+    parser.add_argument("--test", action="store_true",
+                        help="Print raw ADC value every 250ms and exit with Ctrl+C")
     args = parser.parse_args()
 
     # ---------- CONFIG SELECTION ----------
@@ -141,6 +143,16 @@ def main():
     ads.gain = 2 / 3
     chan = AnalogIn(ads, ADS.P0)
 
+    if args.test:
+        print("TEST MODE: Printing raw ADC values (Ctrl+C to exit)\n")
+        try:
+            while True:
+                print(f"ADC raw value: {chan.value}")
+                time.sleep(TEST_DELAY)
+        except KeyboardInterrupt:
+            print("\nExited test mode.")
+            sys.exit(0)
+    
     # ---------- HID LOOP ----------
     with open(HID_DEVICE, "wb", buffering=0) as hid:
         last = 0.0
