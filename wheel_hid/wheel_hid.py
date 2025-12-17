@@ -148,7 +148,7 @@ def main():
         try:
             while True:
                 print(f"ADC raw value: {chan.value}")
-                time.sleep(TEST_DELAY)
+                time.sleep(0.25)
         except KeyboardInterrupt:
             print("\nExited test mode.")
             sys.exit(0)
