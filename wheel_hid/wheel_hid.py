@@ -13,13 +13,8 @@ from smbus2 import SMBus
 CONFIG_DIR = os.path.expanduser("~/.wheel_hid")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 HID_DEVICE = "/dev/hidg0"
-VENV_PY = os.path.join(CONFIG_DIR, "joystickenv", "bin", "python3")
 
-# -------------------------------------------------
-# Auto-switch to venv if present
-# -------------------------------------------------
-if os.path.exists(VENV_PY) and sys.executable != VENV_PY:
-    os.execv(VENV_PY, [VENV_PY] + sys.argv)
+print(f"Config file should be at: {CONFIG_FILE}")
 
 # ---------------- DEFAULTS ----------------
 
@@ -43,6 +38,12 @@ def ask_yn(prompt):
             return True
         if a in ("", "n", "no"):
             return False
+
+def fatal(msg):
+    print("\nFATAL ERROR:")
+    print(msg)
+    print("\nExiting.\n")
+    sys.exit(1)
 
 def load_config_file():
     if not os.path.exists(CONFIG_FILE):
@@ -86,15 +87,27 @@ def load_from_config(cfg):
 # ---------- ADS1115 (SMBus) ----------
 
 def read_ads1115(bus, addr):
-    # Single-shot, AIN0, gain=2/3, 860 SPS
-    bus.write_i2c_block_data(
-        addr,
-        REG_CFG,
-        [0xC3, 0x83]
-    )
-    time.sleep(0.002)
+    try:
+        bus.write_i2c_block_data(
+            addr,
+            REG_CFG,
+            [0xC3, 0x83]
+        )
+        time.sleep(0.002)
 
-    data = bus.read_i2c_block_data(addr, REG_CONV, 2)
+        data = bus.read_i2c_block_data(addr, REG_CONV, 2)
+    except OSError as e:
+        fatal(
+            f"I2C ERROR while communicating with ADS1115:\n"
+            f"{e}\n\n"
+            "Possible causes:\n"
+            " - Wrong I2C address\n"
+            " - I2C not enabled or wrong overlay\n"
+            " - SDA/SCL wired incorrectly\n"
+            " - ADS1115 not powered\n"
+            " - Loose or broken wiring"
+        )
+
     value = (data[0] << 8) | data[1]
     if value & 0x8000:
         value -= 65536
@@ -116,13 +129,11 @@ def main():
     if args.auto:
         cfg_file = load_config_file()
         if not cfg_file:
-            print("ERROR: --auto specified but no config found.")
-            sys.exit(1)
+            fatal("--auto specified but no config found.")
 
         cfg = load_from_config(cfg_file)
         if not cfg:
-            print("ERROR: Invalid config file.")
-            sys.exit(1)
+            fatal("Config file exists but is invalid or incomplete.")
 
         print("Auto mode: loading config...")
 
@@ -156,7 +167,24 @@ def main():
     print(f" Max     : {adc_max}")
     print(f" Center  : {adc_center}\n")
 
-    bus = SMBus(I2C_BUS)
+    # ---------- I2C OPEN ----------
+    try:
+        bus = SMBus(I2C_BUS)
+    except FileNotFoundError:
+        fatal(
+            f"/dev/i2c-{I2C_BUS} not found.\n\n"
+            "Possible causes:\n"
+            " - I2C not enabled in armbian-config\n"
+            " - Wrong I2C bus number\n"
+            " - Missing device tree overlay"
+        )
+    except PermissionError:
+        fatal(
+            f"Permission denied opening /dev/i2c-{I2C_BUS}.\n\n"
+            "Fix with:\n"
+            " sudo usermod -aG i2c $USER\n"
+            " then log out and back in"
+        )
 
     # ---------- TEST MODE ----------
     if args.test:
@@ -169,10 +197,30 @@ def main():
             print("\nExited test mode.")
             sys.exit(0)
 
-    # ---------- HID LOOP ----------
-    with open(HID_DEVICE, "wb", buffering=0) as hid:
-        last = 0.0
+    # ---------- HID OPEN ----------
+    if not os.path.exists(HID_DEVICE):
+        fatal(
+            f"{HID_DEVICE} does not exist.\n\n"
+            "Possible causes:\n"
+            " - HID gadget not created\n"
+            " - Gadget not bound to USB controller\n"
+            " - USB OTG cable not connected\n"
+            " - libcomposite not loaded"
+        )
 
+    try:
+        hid = open(HID_DEVICE, "wb", buffering=0)
+    except PermissionError:
+        fatal(
+            f"Permission denied opening {HID_DEVICE}.\n\n"
+            "Fix with:\n"
+            " sudo chmod 666 /dev/hidg0\n"
+            " or add a udev rule"
+        )
+
+    # ---------- HID LOOP ----------
+    with hid:
+        last = 0.0
         while True:
             raw = clamp(read_ads1115(bus, address), adc_min, adc_max)
 
