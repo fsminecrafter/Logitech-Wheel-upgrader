@@ -154,3 +154,10 @@ Troubleshooting
 *   Force feedback not implemented.
     
 *   Safe for continuous use.
+
+Supported
+---------------
+
+This project is made for the Logitech formula wheel with vibrations.
+
+![Logitech gaming wheel](/logitechwheel.jpg)
