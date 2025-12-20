@@ -86,14 +86,15 @@ Setup Instructions
 
 ### 2\. Upload Arduino Sketch
 
-*   Use Arduino IDE to upload wheel\_hid.ino.
+*   Use Arduino IDE to upload wheel\arduinoreader.ino.
     
-*   Ensure serial monitor is closed when running the PC script.
+*   Ensure serial monitor is closed when running the PC script, As that would take over the Serial connection.
     
 
 ### 3\. Install Dependencies on PC
 
-`   pip3 install pyserial  # Windows only:  pip3 install pyvjoy  # Linux only:  pip3 install python-uinput   `
+`pip3 install pyserial  # Windows only:  pip3 install pyvjoy  # Linux only:  pip3 install python-uinput`
+`pip3 install pyserial`
 
 ### 4\. Run Python HID Script
 
