@@ -3,6 +3,11 @@ import time
 import sys
 import argparse
 
+# -------- USER OFFSET (RAW UNITS) --------
+# Positive = shift right, Negative = shift left
+USER_OFFSET = 0
+
+
 def cleanString(string):
     string = str(string)
     string = string[2:]
@@ -151,8 +156,18 @@ if __name__ == "__main__":
 
                         value = int(line)
 
-                        # Map -32767..32767 → 0..32767
+                        # Apply user offset
+                        value += USER_OFFSET
+
+                        # Clamp to int16 range
+                        if value < -32767:
+                            value = -32767
+                        elif value > 32767:
+                            value = 32767
+
+                        # Map -32767..32767 → 0..32768
                         wheelvalue = remakevalue(value)
+
                         
                         if wheelvalue < 0:
                             wheelvalue = 0
