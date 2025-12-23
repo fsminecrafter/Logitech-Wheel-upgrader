@@ -128,7 +128,11 @@ Allows interactive pairing and calibration:
 *   Smoothed output reduces jitter.
     
 *   Mapped value is sent to vJoy or uinput axis for gaming.
-    
+
+### 7\. Adjusting
+
+* Adjusting is important as the wheel probably wont be centered at first startup.
+* Open up the wheeldriver.py and change the USER_OFFSET = 0 value until the wheel is centered.
 
 Troubleshooting
 ---------------
@@ -142,6 +146,8 @@ Troubleshooting
 *   Linux uinput errors → ensure user has permission (sudo modprobe uinput and group membership).
     
 *   Arduino sketch not responding → power-cycle Arduino.
+
+*  Wheel not centered? Adjust the Offset by opening the wheeldriver.py in a editor.
     
 
 ### Notes
