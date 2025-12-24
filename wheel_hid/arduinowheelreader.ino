@@ -48,7 +48,7 @@ bool readConversion(int16_t &out) {
 bool readADS1115(int16_t &value) {
   uint16_t config =
     0x8000 | // Start conversion
-    0x4000 | // AIN0 vs GND
+    0x0400 | // ±4.096V
     0x0200 | // ±2.048V
     0x0100 | // Single-shot
     0x0080 | // 128 SPS
